@@ -68,7 +68,23 @@ src/routes/
 ├── index.tsx           Dashboard — AccountSelect, liste abonnements filtrés par compte
 │                       search params : ?accountId=<number>
 └── subscriptions/
-    └── $id.tsx         Détail abonnement (edit/delete — à implémenter)
+    └── $id.tsx         Détail abonnement — vue champs, bouton Modifier (modal), bouton Supprimer (dialog confirmation)
+                        notFoundComponent + throw notFound() dans le loader si id inconnu
+                        navigate avant deleteSubscription pour éviter le flash d'erreur (optimistic update vide le cache avant navigation)
+                        Link/navigate vers / préservent ?accountId via subscription.account_id
+```
+
+## Components
+```
+src/components/
+├── AccountSelect.tsx
+├── SubscriptionList.tsx
+├── forms/
+│   ├── NewSubscriptionForm.tsx     RHF + Zod, useAddSubscription
+│   └── EditSubscriptionForm.tsx    RHF + Zod, useUpdateSubscription, defaultValues depuis Tables<"subscriptions">
+└── modals/
+    ├── newSubscriptionModal.tsx
+    └── editSubscriptionModal.tsx
 ```
 
 ## Sorting strategy
@@ -87,7 +103,7 @@ Keeps sort state in the URL — shareable, no extra state management.
 3. ✅ Add form (RHF + Zod + `useAddSubscription` avec optimistic update)
 4. ✅ Delete (`useDeleteSubscription` avec optimistic update)
 5. ✅ Update (`useUpdateSubscription` avec optimistic update)
-6. ⬜ Edit form dans `$id.tsx`
+6. ✅ Edit form dans `$id.tsx`
 7. ⬜ Sorting via URL search params
 8. ⬜ PWA + local notifications
 
