@@ -4,6 +4,7 @@ import { z } from 'zod'
 import { Button } from '#/components/ui/button'
 import NewSubscriptionModal from '#/components/modals/newSubscriptionModal'
 import AccountSelect from '#/components/AccountSelect'
+import AuthButton from '#/components/AuthButton'
 import SubscriptionList from '#/components/SubscriptionList'
 import { accountsQuery, subscriptionsQuery } from '#/lib/queries'
 import { useState } from 'react'
@@ -23,7 +24,7 @@ export const Route = createFileRoute('/')({
 })
 
 function App() {
-  const { data: accounts, isFetching: accountsFetching } = useSuspenseQuery(accountsQuery)
+  const { data: accounts } = useSuspenseQuery(accountsQuery)
   const { data: subscriptions } = useSuspenseQuery(subscriptionsQuery)
 
   const { accountId } = Route.useSearch()
@@ -40,7 +41,8 @@ function App() {
         <div className="flex items-center gap-2">
           <NewSubscriptionModal isOpen={isOpen} onClose={() => setIsOpen(false)} selectedAccountId={accountId} accounts={accounts} />
           <Button onClick={() => setIsOpen(true)}>+ <span className="hidden md:block">Ajouter un abonnement</span></Button>
-          <AccountSelect accounts={accounts} value={accountId} onChange={setAccountId} isFetching={accountsFetching} />
+          <AccountSelect accounts={accounts} value={accountId} onChange={setAccountId} />
+          <AuthButton />
         </div>
       </div>
       <SubscriptionList subscriptions={filtered} />

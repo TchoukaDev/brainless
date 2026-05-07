@@ -19,7 +19,7 @@ Features: add/edit/delete subscriptions, sorting, PWA + notifications on billing
 - **Forms**: React Hook Form + Zod (`@hookform/resolvers`)
 - **Styling**: Tailwind CSS v4 + shadcn/ui
 - **Runtime**: Nitro (via Vite)
-- **Auth**: out of scope for now (Better Auth scaffolded but unused)
+- **Auth**: Supabase Auth — magic link (`signInWithOtp`), session gérée via `SessionProvider` (React Context)
 
 ## TanStack Start vs Next.js mental model
 
@@ -42,6 +42,14 @@ A route file has 3 concerns:
 
 After a mutation: call `router.invalidate()` to re-run the loader (equivalent to `router.refresh()` in Next.js) — **ou** `queryClient.invalidateQueries` si on utilise TanStack Query.
 
+## Auth
+
+- Supabase Auth magic link via `supabase.auth.signInWithOtp({ email })`
+- Session exposée via `useSession()` — React Context dans `src/providers/SessionProvider.tsx`
+- `SessionProvider` wraps l'app dans `__root.tsx` (à l'intérieur de `QueryClientProvider`)
+- À la déconnexion : `supabase.auth.signOut()` + `queryClient.clear()` + navigate `{ to: '/', search: {} }`
+- **Piège SSR** : ne jamais conditionner le rendu (structure JSX) sur `isFetching`/`isRefetching` dans un composant SSR — TanStack Query peut avoir ces flags à `true` côté serveur (staleTime=0), causant un hydration mismatch. Utiliser uniquement `session` (null côté serveur, stable à l'hydratation).
+
 ## Database
 
 Client Supabase typé : `src/lib/supabase.ts` — `createClient<Database>(URL, KEY)`  
@@ -51,10 +59,21 @@ Requêtes et hooks centralisés : `src/lib/queries.ts`
 - `accountsQuery`, `subscriptionsQuery` — objets `{ queryKey, queryFn }` réutilisables
 - `useAddSubscription`, `useUpdateSubscription`, `useDeleteSubscription` — mutations avec optimistic updates
 
-### Subscriptions table (implémentée)
+### Tables (Supabase)
+
+**subscriptions**
 ```
 id, account_id, name, amount, currency, billing_cycle, next_billing_date, auto_renewal, notifications, notes, isActive, created_at, updated_at
 ```
+
+**account_users** (liaison users ↔ accounts, gérée manuellement dans le dashboard)
+```
+user_id uuid PK (FK → auth.users), account_id int8 PK (FK → accounts), role text default 'owner'
+```
+PK composite `(user_id, account_id)`.
+
+**RLS activé** sur `accounts`, `subscriptions`, `account_users`.  
+Policy pattern : `account_id in (select account_id from account_users where user_id = auth.uid())`
 
 Types utilitaires Supabase :
 - `Tables<"subscriptions">` → Row (lecture, cache TanStack Query)
@@ -64,8 +83,8 @@ Types utilitaires Supabase :
 ## Route structure
 ```
 src/routes/
-├── __root.tsx          root layout — QueryClientProvider, Suspense, LoadingBar
-├── index.tsx           Dashboard — AccountSelect, liste abonnements filtrés par compte
+├── __root.tsx          root layout — QueryClientProvider, SessionProvider, Suspense, LoadingBar
+├── index.tsx           Dashboard — AccountSelect, AuthButton, liste abonnements filtrés par compte
 │                       search params : ?accountId=<number>
 └── subscriptions/
     └── $id.tsx         Détail abonnement — vue champs, bouton Modifier (modal), bouton Supprimer (dialog confirmation)
@@ -78,6 +97,7 @@ src/routes/
 ```
 src/components/
 ├── AccountSelect.tsx
+├── AuthButton.tsx          magic link login dialog + logout (queryClient.clear() + navigate /)
 ├── SubscriptionList.tsx
 ├── forms/
 │   ├── NewSubscriptionForm.tsx     RHF + Zod, useAddSubscription
@@ -85,6 +105,9 @@ src/components/
 └── modals/
     ├── newSubscriptionModal.tsx
     └── editSubscriptionModal.tsx
+
+src/providers/
+└── SessionProvider.tsx     SessionContext + useSession() hook + onAuthStateChange subscription
 ```
 
 ## Sorting strategy
@@ -104,8 +127,11 @@ Keeps sort state in the URL — shareable, no extra state management.
 4. ✅ Delete (`useDeleteSubscription` avec optimistic update)
 5. ✅ Update (`useUpdateSubscription` avec optimistic update)
 6. ✅ Edit form dans `$id.tsx`
-7. ⬜ Sorting via URL search params
-8. ⬜ PWA + local notifications
+7. ✅ Auth (Supabase magic link) + RLS + account_users
+8. ⬜ Sorting via URL search params
+9. ⬜ Auto-renewal (pg_cron)
+10. ⬜ PWA + local notifications
+11. ⬜ Push/email notifications (Edge Functions + Resend)
 
 ## Dev commands
 ```

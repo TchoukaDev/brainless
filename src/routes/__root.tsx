@@ -4,6 +4,7 @@ import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
 import { TanStackDevtools } from '@tanstack/react-devtools'
 import { ToastContainer } from 'react-toastify'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { SessionProvider } from '#/providers/SessionProvider'
 
 import appCss from '../styles.css?url'
 import 'react-toastify/dist/ReactToastify.css'
@@ -36,6 +37,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
       </head>
       <body className="font-sans antialiased">
         <QueryClientProvider client={queryClient}>
+          <SessionProvider>
           <LoadingBar />
           {/* Fallback si useSuspenseQuery suspend après que le composant est monté */}
           <Suspense fallback={<div className="p-8 text-muted-foreground text-sm">Chargement…</div>}>
@@ -47,6 +49,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
             plugins={[{ name: 'Tanstack Router', render: <TanStackRouterDevtoolsPanel /> }]}
           />
           <Scripts />
+          </SessionProvider>
         </QueryClientProvider>
       </body>
     </html>
