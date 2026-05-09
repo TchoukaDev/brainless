@@ -8,9 +8,9 @@ import AuthButton from '#/components/AuthButton'
 import SubscriptionList from '#/components/SubscriptionList'
 import { accountsQuery, subscriptionsQuery } from '#/lib/queries'
 import { useState } from 'react'
-import { queryClient } from './__root'
+import { queryClient } from '#/routes/__root'
 
-export const Route = createFileRoute('/')({
+export const Route = createFileRoute('/_protected/')({
   validateSearch: z.object({
     accountId: z.number().optional(),
   }),
@@ -28,11 +28,11 @@ function App() {
   const { data: subscriptions } = useSuspenseQuery(subscriptionsQuery)
 
   const { accountId } = Route.useSearch()
-  const navigate = useNavigate({ from: '/' })
+  const navigate = useNavigate()
   const [isOpen, setIsOpen] = useState(false)
 
   const filtered = subscriptions.filter(s => s.account_id === accountId)
-  const setAccountId = (id: number) => navigate({ search: { accountId: id } })
+  const setAccountId = (id: number) => navigate({ to: '/', search: { accountId: id } })
 
   return (
     <main className="p-8 flex flex-col gap-6">

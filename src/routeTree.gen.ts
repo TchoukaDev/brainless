@@ -9,68 +9,117 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as IndexRouteImport } from './routes/index'
-import { Route as SubscriptionsIdRouteImport } from './routes/subscriptions/$id'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as ProtectedRouteImport } from './routes/_protected'
+import { Route as ProtectedIndexRouteImport } from './routes/_protected/index'
+import { Route as ProtectedSubscriptionsIdRouteImport } from './routes/_protected/subscriptions/$id'
 
-const IndexRoute = IndexRouteImport.update({
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProtectedRoute = ProtectedRouteImport.update({
+  id: '/_protected',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProtectedIndexRoute = ProtectedIndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => ProtectedRoute,
 } as any)
-const SubscriptionsIdRoute = SubscriptionsIdRouteImport.update({
-  id: '/subscriptions/$id',
-  path: '/subscriptions/$id',
-  getParentRoute: () => rootRouteImport,
-} as any)
+const ProtectedSubscriptionsIdRoute =
+  ProtectedSubscriptionsIdRouteImport.update({
+    id: '/subscriptions/$id',
+    path: '/subscriptions/$id',
+    getParentRoute: () => ProtectedRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
-  '/subscriptions/$id': typeof SubscriptionsIdRoute
+  '/': typeof ProtectedIndexRoute
+  '/login': typeof LoginRoute
+  '/subscriptions/$id': typeof ProtectedSubscriptionsIdRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
-  '/subscriptions/$id': typeof SubscriptionsIdRoute
+  '/login': typeof LoginRoute
+  '/': typeof ProtectedIndexRoute
+  '/subscriptions/$id': typeof ProtectedSubscriptionsIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
-  '/subscriptions/$id': typeof SubscriptionsIdRoute
+  '/_protected': typeof ProtectedRouteWithChildren
+  '/login': typeof LoginRoute
+  '/_protected/': typeof ProtectedIndexRoute
+  '/_protected/subscriptions/$id': typeof ProtectedSubscriptionsIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/subscriptions/$id'
+  fullPaths: '/' | '/login' | '/subscriptions/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/subscriptions/$id'
-  id: '__root__' | '/' | '/subscriptions/$id'
+  to: '/login' | '/' | '/subscriptions/$id'
+  id:
+    | '__root__'
+    | '/_protected'
+    | '/login'
+    | '/_protected/'
+    | '/_protected/subscriptions/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
-  SubscriptionsIdRoute: typeof SubscriptionsIdRoute
+  ProtectedRoute: typeof ProtectedRouteWithChildren
+  LoginRoute: typeof LoginRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/subscriptions/$id': {
-      id: '/subscriptions/$id'
+    '/_protected': {
+      id: '/_protected'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof ProtectedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_protected/': {
+      id: '/_protected/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof ProtectedIndexRouteImport
+      parentRoute: typeof ProtectedRoute
+    }
+    '/_protected/subscriptions/$id': {
+      id: '/_protected/subscriptions/$id'
       path: '/subscriptions/$id'
       fullPath: '/subscriptions/$id'
-      preLoaderRoute: typeof SubscriptionsIdRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof ProtectedSubscriptionsIdRouteImport
+      parentRoute: typeof ProtectedRoute
     }
   }
 }
 
+interface ProtectedRouteChildren {
+  ProtectedIndexRoute: typeof ProtectedIndexRoute
+  ProtectedSubscriptionsIdRoute: typeof ProtectedSubscriptionsIdRoute
+}
+
+const ProtectedRouteChildren: ProtectedRouteChildren = {
+  ProtectedIndexRoute: ProtectedIndexRoute,
+  ProtectedSubscriptionsIdRoute: ProtectedSubscriptionsIdRoute,
+}
+
+const ProtectedRouteWithChildren = ProtectedRoute._addFileChildren(
+  ProtectedRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
-  SubscriptionsIdRoute: SubscriptionsIdRoute,
+  ProtectedRoute: ProtectedRouteWithChildren,
+  LoginRoute: LoginRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

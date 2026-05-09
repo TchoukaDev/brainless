@@ -3,12 +3,12 @@ import { useSuspenseQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { toast } from 'react-toastify'
 import { accountsQuery, subscriptionsQuery, useDeleteSubscription } from '#/lib/queries'
-import { queryClient } from '../__root'
+import { queryClient } from '#/routes/__root'
 import { Button } from '#/components/ui/button'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '#/components/ui/dialog'
 import EditSubscriptionModal from '#/components/modals/editSubscriptionModal'
 
-export const Route = createFileRoute('/subscriptions/$id')({
+export const Route = createFileRoute('/_protected/subscriptions/$id')({
     loader: async ({ params }) => {
         const [subscriptions] = await Promise.all([
             queryClient.ensureQueryData(subscriptionsQuery),

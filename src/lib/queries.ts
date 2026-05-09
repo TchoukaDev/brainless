@@ -5,16 +5,18 @@ import { useMutation, useQueryClient } from "@tanstack/react-query"
 export const accountsQuery = {
     queryKey: ["accounts"],
     queryFn: async () => {
-        const { data } = await supabase.from("accounts").select("*")
-        return data ?? []
+        const { data, error } = await supabase.from("accounts").select("*")
+        if (error) throw error
+        return data
     },
 }
 
 export const subscriptionsQuery = {
     queryKey: ["subscriptions"],
     queryFn: async () => {
-        const { data } = await supabase.from("subscriptions").select("*")
-        return data ?? []
+        const { data, error } = await supabase.from("subscriptions").select("*")
+        if (error) throw error
+        return data
     },
 }
 
@@ -24,7 +26,8 @@ export function useUpdateSubscription() {
     return useMutation({
         // id obligatoire pour le .eq(), les autres champs sont optionnels (on peut n'en patcher qu'un)
         mutationFn: async (subscription: TablesUpdate<"subscriptions"> & { id: number }) => {
-            await supabase.from("subscriptions").update(subscription).eq("id", subscription.id)
+            const { error } = await supabase.from("subscriptions").update(subscription).eq("id", subscription.id)
+            if (error) throw error
         },
         onMutate: async (subscription) => {
             await queryClient.cancelQueries({ queryKey: subscriptionsQuery.queryKey })
@@ -45,7 +48,8 @@ export function useDeleteSubscription() {
     const queryClient = useQueryClient()
     return useMutation({
         mutationFn: async (id: number) => {
-            await supabase.from("subscriptions").delete().eq("id", id)
+            const { error } = await supabase.from("subscriptions").delete().eq("id", id)
+            if (error) throw error
         },
         onMutate: async (id) => {
             await queryClient.cancelQueries({ queryKey: subscriptionsQuery.queryKey })
@@ -67,7 +71,8 @@ export function useAddSubscription() {
     return useMutation({
         // TablesInsert : type pour l'insertion — sans les champs générés par la DB (id, created_at, updated_at)
         mutationFn: async (subscription: TablesInsert<"subscriptions">) => {
-            const { data } = await supabase.from("subscriptions").insert(subscription).select().single()
+            const { data, error } = await supabase.from("subscriptions").insert(subscription).select().single()
+            if (error) throw error
             return data
         },
         onMutate: async (subscription) => {

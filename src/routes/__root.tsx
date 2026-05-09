@@ -39,7 +39,6 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         <QueryClientProvider client={queryClient}>
           <SessionProvider>
           <LoadingBar />
-          {/* Fallback si useSuspenseQuery suspend après que le composant est monté */}
           <Suspense fallback={<div className="p-8 text-muted-foreground text-sm">Chargement…</div>}>
             {children}
           </Suspense>
